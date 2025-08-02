@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Language Detector AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --background-color: #121826;
+            --surface-color: #1A2233;
+            --primary-color: #00A99D;
+            --primary-hover: #00C4B4;
+            --text-color: #E0E0E0;
+            --subtle-text: #8A93A6;
+            --border-color: #2A364D;
+            --error-bg: #4d2a2a;
+            --error-border: #a55d5d;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 2rem;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background-color: var(--surface-color);
+            padding: 2rem 2.5rem;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border-color);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        header h1 span {
+            color: var(--primary-color);
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 150px;
+            padding: 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            box-sizing: border-box;
+            resize: vertical;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(0, 169, 157, 0.3);
+        }
+
+        button {
+            display: block;
+            width: 100%;
+            padding: 1rem;
+            margin-top: 1rem;
+            background-image: linear-gradient(90deg, #00A99D, #00C4B4);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(0, 169, 157, 0.2);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: wait;
+        }
+
+        #result {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background-color: var(--background-color);
+            display: none; /* Hidden by default */
+        }
+
+        #result.error {
+            background-color: var(--error-bg);
+            border-color: var(--error-border);
+        }
+
+        .result-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .result-header .icon {
+            width: 48px;
+            height: 48px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(0, 169, 157, 0.1);
+            border-radius: 50%;
+        }
+
+        .result-header .icon svg {
+            width: 24px;
+            height: 24px;
+            fill: var(--primary-color);
+        }
+        
+        .result-header .error-icon svg {
+            fill: var(--error-border);
+        }
+
+        .result-title h3 {
+            margin: 0;
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .result-title p {
+            margin: 0;
+            color: var(--subtle-text);
+            font-size: 0.9rem;
+        }
+
+        .result-body p {
+            margin: 0.5rem 0;
+        }
+        
+        .result-body strong {
+            color: var(--primary-color);
+            font-weight: 500;
+        }
+
+        .confidence-list {
+            list-style: none;
+            padding-left: 0;
+            margin-top: 1rem;
+        }
+
+        .confidence-list li {
+            padding-left: 1.5rem;
+            position: relative;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            color: var(--subtle-text);
+        }
+        .confidence-list li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: var(--primary-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Language <span>Detector</span></h1>
+        </header>
+        <main>
+            <textarea id="text-input" placeholder="Paste or type text here..."></textarea>
+            <button id="detect-btn" onclick="detectLanguage()">Detect Language</button>
+        </main>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        const detectBtn = document.getElementById('detect-btn');
+        const textInput = document.getElementById('text-input');
+        const resultDiv = document.getElementById('result');
+
+        const successIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>`;
+        const errorIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>`;
+
+        async function detectLanguage() {
+            detectBtn.disabled = true;
+            detectBtn.innerText = 'Analyzing...';
+            resultDiv.style.display = 'none';
+
+            try {
+                const response = await fetch('/detect', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: textInput.value })
+                });
+
+                const data = await response.json();
+                displayResult(data);
+
+            } catch (error) {
+                const errorData = { success: false, error: 'Network error. Could not connect to the server.' };
+                displayResult(errorData);
+            } finally {
+                detectBtn.disabled = false;
+                detectBtn.innerText = 'Detect Language';
+            }
+        }
+
+        function displayResult(data) {
+            resultDiv.style.display = 'block';
+            resultDiv.className = data.success ? '' : 'error';
+
+            if (data.success) {
+                let factorsHtml = '<ul class="confidence-list">';
+                if (data.confidence_factors.length > 0) {
+                    data.confidence_factors.forEach(factor => {
+                        factorsHtml += `<li>${factor}</li>`;
+                    });
+                } else {
+                    factorsHtml += `<li>Standard confidence level.</li>`;
+                }
+                factorsHtml += '</ul>';
+
+                resultDiv.innerHTML = `
+                    <div class="result-header">
+                        <div class="icon">${successIcon}</div>
+                        <div class="result-title">
+                            <h3>${data.language_name}</h3>
+                            <p>Language code: ${data.detected_language}</p>
+                        </div>
+                    </div>
+                    <div class="result-body">
+                        <p><strong>Text Length:</strong> ${data.text_length} characters</p>
+                        <p><strong>Confidence Notes:</strong></p>
+                        ${factorsHtml}
+                    </div>
+                `;
+            } else {
+                resultDiv.innerHTML = `
+                    <div class="result-header">
+                        <div class="icon error-icon">${errorIcon}</div>
+                        <div class="result-title">
+                            <h3>Detection Failed</h3>
+                            <p>${data.error}</p>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>
